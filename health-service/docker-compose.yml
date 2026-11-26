@@ -1,0 +1,38 @@
+services:
+  health-db:
+    image: postgres:17-alpine
+    container_name: petcare-health-db
+    environment:
+      POSTGRES_USER: health_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: health_db
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - health-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U health_user -d health_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  health-service:
+    build: .
+    container_name: petcare-health-service
+    ports:
+      - "8005:8005"
+    environment:
+      DATABASE_URL: postgresql+psycopg://health_user:${POSTGRES_PASSWORD}@health-db:5432/health_db
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+    depends_on:
+      health-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  health-data:
+    external: true
+    name: petcare-health-data
