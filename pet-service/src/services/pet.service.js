@@ -46,9 +46,27 @@ export async function getPets(ownerId) {
 }
 
 // GET /pets/:id
-export async function getPetById(id, ownerId) {
+export async function getPetById(id, user) {
+    if (
+        user.role !== 'OWNER' &&
+        user.role !== 'VETERINARIAN'
+    ) {
+        throw createError(
+            'Access denied',
+            403,
+            'ACCESS_DENIED'
+        );
+    }
+
     const pet = await prisma.pet.findFirst({
-        where: { id, ownerId },
+        where: {
+            id,
+
+            ...(user.role === 'OWNER' && {
+                ownerId: user.sub
+            })
+        },
+
         include: latestWeightInclude
     });
 

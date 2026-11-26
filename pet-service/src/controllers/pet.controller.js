@@ -26,7 +26,7 @@ export async function getOne(req, res, next) {
     try {
         const pet = await getPetById(
             req.pet.id,
-            req.user.sub
+            req.user
         );
 
         return res.status(200).json(pet);

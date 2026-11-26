@@ -5,7 +5,8 @@ info:
   description: >
     REST API for pet profile management and weight
     measurement history. All pet operations require
-    a valid JWT token and owner authorization.
+    a valid JWT token. Access depends on the user role
+    and pet ownership.
   version: 1.0.0
 
 servers:
@@ -103,11 +104,10 @@ paths:
       tags: [Pets]
       summary: Get pet by ID
       description: >
-        Deletes the pet and its associated weight
-        measurements after checking for active
-        appointments through the Appointment Service.
-        Deletion is rejected if pending or confirmed
-        appointments exist.
+        Returns pet details and the latest recorded weight.
+        Owners can access only their own pets.
+        Veterinarians can access individual pet profiles
+        using a valid JWT token.
       operationId: getPetById
       responses:
         '200':
@@ -190,7 +190,10 @@ paths:
     get:
       tags: [Weights]
       summary: Get pet weight history
-      description: Returns measurements ordered from newest to oldest.
+      description: >
+        Returns weight measurements ordered from newest
+        to oldest. Access is permitted to the pet owner
+        and authenticated veterinarians.
       operationId: getPetWeights
       responses:
         '200':
