@@ -155,3 +155,31 @@ vite.config.ts.timestamp-*
 .nx/cache
 .nx/workspace-data
 .nx/migrate-runs
+
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+
+# Node.js and React
+**/node_modules/
+**/dist/
+**/.next/
+
+# Python
+**/__pycache__/
+**/.venv/
+**/venv/
+*.pyc
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
