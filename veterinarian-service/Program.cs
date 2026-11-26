@@ -5,7 +5,11 @@ using VeterinarianService.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    options.AddOperationTransformer<ResponseTransformer>();
+});
 
 builder.Services.AddJwtAuthentication(builder.Configuration);
 

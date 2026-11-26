@@ -480,4 +480,5 @@ public class VeterinariansController : ControllerBase
             EndTime = availability.EndTime
         };
     }
+
 }

@@ -24,18 +24,26 @@ services:
     container_name: petcare-appointment-service
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8004:8080"
+      - "127.0.0.1:8004:8004"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=appointment-db;Port=5432;Database=appointment_db;Username=petcare;Password=${APPOINTMENT_DB_PASSWORD}"
-      Services__VeterinarianService: "http://host.docker.internal:8003"
+      Services__VeterinarianService: "http://veterinarian-service:8003"
+      Services__PetService: "http://pet-service:8002"
       JWT_SECRET: ${JWT_SECRET}
       JWT_ISSUER: ${JWT_ISSUER}
       JWT_AUDIENCE: ${JWT_AUDIENCE}
     depends_on:
       appointment-db:
         condition: service_healthy
+    networks:
+      - default
+      - petcare-network
 
 volumes:
   appointment_data:
     name: petcare_appointment_data
+
+networks:
+  petcare-network:
+    external: true
