@@ -69,8 +69,10 @@ export async function remove(req, res, next) {
     try {
         const id = userIdSchema.parse(req.params.id);
 
-        await deleteUser(id);
-
+        await deleteUser(
+            id,
+            req.headers.authorization
+        );
         return res.status(204).send();
 
     } catch (error) {
