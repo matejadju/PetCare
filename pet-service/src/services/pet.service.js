@@ -4,6 +4,10 @@ import {
     createError
 } from '../utils/errors.js';
 
+import {
+    hasActivePetAppointments
+} from '../clients/appointment.client.js';
+
 const latestWeightInclude = {
     weights: {
         orderBy: [
@@ -113,8 +117,29 @@ export async function updatePet(id, ownerId, data) {
 }
 
 // DELETE /pets/:id
-export async function deletePet(id, ownerId) {
+export async function deletePet(
+    id,
+    ownerId,
+    authorization
+) {
+    const hasActiveAppointments =
+        await hasActivePetAppointments(
+            id,
+            authorization
+        );
+
+    if (hasActiveAppointments) {
+        throw createError(
+            'Cannot delete pet with active appointments',
+            409,
+            'ACTIVE_APPOINTMENTS_EXIST'
+        );
+    }
+
     await prisma.pet.delete({
-        where: { id, ownerId }
+        where: {
+            id,
+            ownerId
+        }
     });
 }

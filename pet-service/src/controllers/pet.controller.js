@@ -79,7 +79,8 @@ export async function remove(req, res, next) {
     try {
         await deletePet(
             req.pet.id,
-            req.user.sub
+            req.user.sub,
+            req.headers.authorization
         );
 
         return res.status(204).send();
