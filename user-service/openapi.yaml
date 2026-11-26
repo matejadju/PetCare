@@ -190,7 +190,11 @@ paths:
       tags:
         - Users
       summary: Delete user account
-      description: Users can only delete their own accounts.
+      description: >
+        Deletes the authenticated user's account after
+        checking for active appointments through the
+        Appointment Service. Deletion is rejected if
+        pending or confirmed appointments exist.
       operationId: deleteUser
       responses:
         '204':
@@ -205,6 +209,14 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
+        '409':
+          $ref: '#/components/responses/ActiveAppointments'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 
   /users/{id}/password:
     parameters:
@@ -599,3 +611,43 @@ components:
           example:
             code: INTERNAL_SERVER_ERROR
             message: An unexpected error occurred
+    
+    ActiveAppointments:
+      description: Active appointments prevent deletion
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: ACTIVE_APPOINTMENTS_EXIST
+            message: Cannot delete resource with active appointments
+
+    BadGateway:
+      description: Invalid response from Appointment Service
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: APPOINTMENT_INVALID_RESPONSE
+            message: Invalid response from Appointment Service
+
+    ServiceUnavailable:
+      description: Appointment Service is unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: APPOINTMENT_SERVICE_UNAVAILABLE
+            message: Appointment Service is unavailable
+
+    GatewayTimeout:
+      description: Appointment Service request timed out
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: APPOINTMENT_SERVICE_TIMEOUT
+            message: Appointment Service request timed out
