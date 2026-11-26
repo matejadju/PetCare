@@ -1,0 +1,621 @@
+openapi: 3.0.3
+
+info:
+  title: PetCare Pet Service API
+  description: >
+    REST API for pet profile management and weight
+    measurement history. All pet operations require
+    a valid JWT token and owner authorization.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8002
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Service and database availability
+  - name: Pets
+    description: Pet profile management
+  - name: Weights
+    description: Pet weight measurement history
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Check service availability
+      operationId: checkHealth
+      security: []
+      responses:
+        '200':
+          description: Service and database are available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Database unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /pets:
+    get:
+      tags: [Pets]
+      summary: Get all pets of the authenticated owner
+      operationId: getPets
+      responses:
+        '200':
+          description: List of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Pets]
+      summary: Create a new pet
+      description: >
+        The owner ID is extracted from the JWT token.
+        Initial weight measurement is optional.
+      operationId: createPet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePetRequest'
+      responses:
+        '201':
+          description: Pet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /pets/{id}:
+    parameters:
+      - $ref: '#/components/parameters/PetId'
+
+    get:
+      tags: [Pets]
+      summary: Get pet by ID
+      description: >
+        Returns a pet belonging to the authenticated owner,
+        including its owner ID and latest recorded weight.
+      operationId: getPetById
+      responses:
+        '200':
+          description: Pet found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Pets]
+      summary: Update pet profile
+      operationId: updatePet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePetRequest'
+      responses:
+        '200':
+          description: Pet updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Pets]
+      summary: Delete pet profile
+      description: >
+        Deletes the pet and its associated weight measurements.
+      operationId: deletePet
+      responses:
+        '204':
+          description: Pet deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /pets/{id}/weights:
+    parameters:
+      - $ref: '#/components/parameters/PetId'
+
+    get:
+      tags: [Weights]
+      summary: Get pet weight history
+      description: Returns measurements ordered from newest to oldest.
+      operationId: getPetWeights
+      responses:
+        '200':
+          description: Weight measurement history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WeightMeasurement'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Weights]
+      summary: Add a weight measurement
+      operationId: createWeight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWeightRequest'
+      responses:
+        '201':
+          description: Weight measurement created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeightResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /pets/{id}/weights/{weightId}:
+    parameters:
+      - $ref: '#/components/parameters/PetId'
+      - $ref: '#/components/parameters/WeightId'
+
+    put:
+      tags: [Weights]
+      summary: Update a weight measurement
+      operationId: updateWeight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWeightRequest'
+      responses:
+        '200':
+          description: Weight measurement updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeightResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Weights]
+      summary: Delete a weight measurement
+      operationId: deleteWeight
+      responses:
+        '204':
+          description: Weight measurement deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token issued by the User Service.
+
+  parameters:
+
+    PetId:
+      name: id
+      in: path
+      required: true
+      description: Unique pet identifier
+      schema:
+        type: string
+        format: uuid
+
+    WeightId:
+      name: weightId
+      in: path
+      required: true
+      description: Unique weight measurement identifier
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+
+    Pet:
+      type: object
+      required:
+        - id
+        - ownerId
+        - name
+        - species
+        - breed
+        - birthDate
+        - gender
+        - imageUrl
+        - weight
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        ownerId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Luna
+        species:
+          type: string
+          example: Dog
+        breed:
+          type: string
+          nullable: true
+          example: Golden Retriever
+        birthDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2022-05-15T00:00:00.000Z'
+        gender:
+          type: string
+          enum: [MALE, FEMALE, UNKNOWN]
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+        weight:
+          type: number
+          format: double
+          nullable: true
+          description: Latest recorded weight in kilograms
+          example: 24.5
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreatePetRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - species
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Luna
+        species:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: Dog
+        breed:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+          example: Golden Retriever
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          description: Birth date must not be in the future.
+          example: '2022-05-15'
+        gender:
+          type: string
+          enum: [MALE, FEMALE, UNKNOWN]
+          default: UNKNOWN
+          example: FEMALE
+        imageUrl:
+          type: string
+          format: uri
+          pattern: '^https://'
+          maxLength: 2048
+          nullable: true
+        weight:
+          $ref: '#/components/schemas/WeightValue'
+
+    UpdatePetRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Luna Updated
+        species:
+          type: string
+          minLength: 1
+          maxLength: 50
+        breed:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          description: Birth date must not be in the future.
+        gender:
+          type: string
+          enum: [MALE, FEMALE, UNKNOWN]
+        imageUrl:
+          type: string
+          format: uri
+          pattern: '^https://'
+          maxLength: 2048
+          nullable: true
+
+    WeightValue:
+      type: number
+      format: double
+      minimum: 0.001
+      maximum: 9999.999
+      multipleOf: 0.001
+      description: Weight in kilograms
+      example: 24.5
+
+    WeightMeasurement:
+      type: object
+      required:
+        - id
+        - petId
+        - weight
+        - measuredAt
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        petId:
+          type: string
+          format: uuid
+        weight:
+          $ref: '#/components/schemas/WeightValue'
+        measuredAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateWeightRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - weight
+      properties:
+        weight:
+          $ref: '#/components/schemas/WeightValue'
+        measuredAt:
+          type: string
+          format: date-time
+          description: >
+            Measurement date must not be in the future.
+            Defaults to the current time if omitted.
+
+    UpdateWeightRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        weight:
+          $ref: '#/components/schemas/WeightValue'
+        measuredAt:
+          type: string
+          format: date-time
+          description: Measurement date must not be in the future.
+
+    PetResponse:
+      type: object
+      required: [message, pet]
+      properties:
+        message:
+          type: string
+          example: Pet created successfully
+        pet:
+          $ref: '#/components/schemas/Pet'
+
+    WeightResponse:
+      type: object
+      required: [message, measurement]
+      properties:
+        message:
+          type: string
+          example: Weight measurement created successfully
+        measurement:
+          $ref: '#/components/schemas/WeightMeasurement'
+
+    HealthResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          example: pet-service
+        status:
+          type: string
+          enum: [UP, DOWN]
+        database:
+          type: string
+          enum: [UP, DOWN]
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required: [message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: VALIDATION_ERROR
+            message: Validation failed
+
+    Unauthorized:
+      description: Missing, invalid or expired JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missingToken:
+              value:
+                code: TOKEN_MISSING
+                message: Authorization token is required
+            invalidToken:
+              value:
+                code: TOKEN_INVALID
+                message: Invalid JWT token
+            expiredToken:
+              value:
+                code: TOKEN_EXPIRED
+                message: JWT token has expired
+
+    Forbidden:
+      description: Insufficient permissions or invalid ownership
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: ACCESS_DENIED
+            message: You can only access your own pets
+
+    NotFound:
+      description: Pet or weight measurement not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: PET_NOT_FOUND
+            message: Pet not found
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INTERNAL_SERVER_ERROR
+            message: An unexpected error occurred
