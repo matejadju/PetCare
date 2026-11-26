@@ -1,0 +1,601 @@
+openapi: 3.0.3
+
+info:
+  title: PetCare User Service API
+  description: >
+    REST API for user registration, authentication,
+    profile management and JWT token generation.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8001
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Service and database availability
+  - name: Authentication
+    description: User registration and authentication
+  - name: Users
+    description: User profile management
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Check service availability
+      operationId: checkHealth
+      security: []
+      responses:
+        '200':
+          description: Service and database are available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Database is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /users/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user and generate JWT
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: INVALID_CREDENTIALS
+                message: Invalid email or password
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get authenticated user profile
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: >
+        Returns the complete public profile for the authenticated
+        user, or limited information for another user.
+      operationId: getUserById
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+                  - $ref: '#/components/schemas/LimitedUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      description: Users can only update their own profiles.
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - Users
+      summary: Delete user account
+      description: Users can only delete their own accounts.
+      operationId: deleteUser
+      responses:
+        '204':
+          description: User deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{id}/password:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+
+    put:
+      tags:
+        - Users
+      summary: Change user password
+      description: >
+        Changes the authenticated user's password after
+        verification of the current password.
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password changed successfully
+        '400':
+          description: Invalid input or incorrect current password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{id}/avatar:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+
+    delete:
+      tags:
+        - Users
+      summary: Remove user avatar
+      description: Removes the avatar URL from the user profile.
+      operationId: deleteAvatar
+      responses:
+        '200':
+          description: Avatar removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token issued by the User Service.
+
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      description: Unique user identifier
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - role
+        - phone
+        - avatarUrl
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Test Owner
+        email:
+          type: string
+          format: email
+          example: owner@petcare.test
+        role:
+          type: string
+          enum:
+            - OWNER
+            - VETERINARIAN
+        phone:
+          type: string
+          nullable: true
+          example: "+38640123456"
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: https://example.com/avatar.jpg
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LimitedUser:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        role:
+          type: string
+          enum:
+            - OWNER
+            - VETERINARIAN
+
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Test Owner
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: owner@petcare.test
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: Maximum length is 72 UTF-8 bytes.
+          example: PetCare123!
+        phone:
+          type: string
+          minLength: 5
+          maxLength: 30
+          example: "+38640123456"
+
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: owner@petcare.test
+        password:
+          type: string
+          format: password
+          minLength: 1
+          description: Maximum length is 72 UTF-8 bytes.
+          example: PetCare123!
+
+    UpdateUserRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Updated Owner
+        phone:
+          type: string
+          minLength: 5
+          maxLength: 30
+          nullable: true
+          example: "+38640987654"
+        avatarUrl:
+          type: string
+          format: uri
+          maxLength: 2048
+          nullable: true
+          pattern: '^https://'
+          example: https://example.com/avatar.jpg
+
+    ChangePasswordRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          format: password
+          minLength: 1
+          description: Maximum length is 72 UTF-8 bytes.
+          example: PetCare123!
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          description: >
+            Must differ from the current password.
+            Maximum length is 72 UTF-8 bytes.
+          example: PetCare456!
+
+    UserResponse:
+      type: object
+      required:
+        - message
+        - user
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    LoginResponse:
+      type: object
+      required:
+        - message
+        - token
+        - tokenType
+        - user
+      properties:
+        message:
+          type: string
+          example: Login successful
+        token:
+          type: string
+          description: Signed JWT access token
+        tokenType:
+          type: string
+          example: Bearer
+        user:
+          $ref: '#/components/schemas/User'
+
+    HealthResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          example: user-service
+        status:
+          type: string
+          enum:
+            - UP
+            - DOWN
+        database:
+          type: string
+          enum:
+            - UP
+            - DOWN
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Validation failed
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: VALIDATION_ERROR
+            message: Validation failed
+
+    Unauthorized:
+      description: Missing, invalid or expired JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missingToken:
+              value:
+                code: TOKEN_MISSING
+                message: Authorization token is required
+            invalidToken:
+              value:
+                code: TOKEN_INVALID
+                message: Invalid JWT token
+            expiredToken:
+              value:
+                code: TOKEN_EXPIRED
+                message: JWT token has expired
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: ACCESS_DENIED
+            message: You can only manage your own account
+
+    NotFound:
+      description: Requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: RESOURCE_NOT_FOUND
+            message: Requested resource was not found
+
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: DUPLICATE_RESOURCE
+            message: Resource already exists
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INTERNAL_SERVER_ERROR
+            message: An unexpected error occurred
