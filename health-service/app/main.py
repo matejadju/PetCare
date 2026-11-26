@@ -1,14 +1,26 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.database import get_db
+from app.database import Base, engine, get_db
+from app import models
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+    engine.dispose()
+
 
 app = FastAPI(
     title="PetCare Health Service",
     description="Microservice for managing pet vaccinations and medications.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 
