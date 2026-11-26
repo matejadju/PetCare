@@ -4,6 +4,7 @@ import { config } from './config/env.js';
 
 import healthRoutes from './routes/health.routes.js';
 import userRoutes from './routes/user.routes.js';
+import petRoutes from './routes/pet.routes.js';
 
 const app = express();
 
@@ -31,5 +32,6 @@ app.get('/health', (req, res) => {
 
 app.use('/api', healthRoutes);
 app.use('/api', userRoutes);
+app.use('/api', petRoutes);
 
 export default app;
