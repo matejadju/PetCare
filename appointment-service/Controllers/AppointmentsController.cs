@@ -19,6 +19,7 @@ public class AppointmentsController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly VeterinarianServiceClient _veterinarianServiceClient;
+    private readonly PetServiceClient _petServiceClient;
 
     private string CurrentUserId =>
         User.FindFirst("sub")!.Value;
@@ -30,10 +31,12 @@ public class AppointmentsController : ControllerBase
 
     public AppointmentsController(
         AppDbContext context,
-        VeterinarianServiceClient veterinarianServiceClient)
+        VeterinarianServiceClient veterinarianServiceClient,
+        PetServiceClient petServiceClient)
     {
         _context = context;
         _veterinarianServiceClient = veterinarianServiceClient;
+        _petServiceClient = petServiceClient;
     }
 
     // GET /appointments
@@ -113,6 +116,80 @@ public class AppointmentsController : ControllerBase
 
         return Ok(ToResponse(appointment));
     }
+    // GET /appointments/pets/{petId}/active
+    [HttpGet("pets/{petId:guid}/active")]
+    [Authorize(Roles = "OWNER")]
+    public async Task<ActionResult<ActiveAppointmentsResponse>>
+        HasActiveAppointmentsForPet(Guid petId)
+    {
+        try
+        {
+            var pet = await _petServiceClient.GetPetAsync(
+                petId, CurrentToken);
+
+            if (pet == null)
+            {
+                return NotFound(new
+                {
+                    message = "Pet not found."
+                });
+            }
+
+            if (pet.Id != petId ||
+                pet.OwnerId != Guid.Parse(CurrentUserId))
+            {
+                return Forbid();
+            }
+
+            var hasActiveAppointments =
+                await _context.Appointments.AnyAsync(a =>
+                    a.PetId == petId &&
+                    (a.Status == "pending" ||
+                    a.Status == "confirmed"));
+
+            return Ok(new ActiveAppointmentsResponse
+            {
+                HasActiveAppointments = hasActiveAppointments
+            });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (Exception ex) when (
+            ex is HttpRequestException ||
+            ex is TaskCanceledException ||
+            ex is JsonException)
+        {
+            return StatusCode(503, new
+            {
+                message = "Pet Service is currently unavailable."
+            });
+        }
+    }
+    // GET /appointments/users/{userId}/active
+    [HttpGet("users/{userId:guid}/active")]
+    [Authorize(Roles = "OWNER")]
+    public async Task<ActionResult<ActiveAppointmentsResponse>>
+        HasActiveAppointmentsForUser(Guid userId)
+    {
+        if (userId != Guid.Parse(CurrentUserId))
+        {
+            return Forbid();
+        }
+
+        var hasActiveAppointments =
+            await _context.Appointments.AnyAsync(a =>
+                a.UserId == userId.ToString() &&
+                (a.Status == "pending" ||
+                a.Status == "confirmed"));
+
+        return Ok(new ActiveAppointmentsResponse
+        {
+            HasActiveAppointments = hasActiveAppointments
+        });
+    }
+
 
     // POST /appointments
     [HttpPost]
@@ -129,6 +206,13 @@ public class AppointmentsController : ControllerBase
                 message = "Appointment date must be in the future."
             });
         }
+        var petValidationResult = await ValidatePetAsync(request);
+
+        if (petValidationResult != null)
+        {
+            return petValidationResult;
+        }
+
         var validationResult =
             await ValidateVeterinarianAndAvailabilityAsync(request);
 
@@ -152,7 +236,7 @@ public class AppointmentsController : ControllerBase
         var appointment = new Appointment
         {
             UserId = CurrentUserId,
-            PetId = request.PetId,
+            PetId = request.PetId!.Value,
             VeterinarianId = request.VeterinarianId,
             AvailabilityId = request.AvailabilityId,
             AppointmentDate = appointmentDate,
@@ -226,7 +310,14 @@ public class AppointmentsController : ControllerBase
             });
         }
 
-                var validationResult =
+        var petValidationResult = await ValidatePetAsync(request);
+
+        if (petValidationResult != null)
+        {
+            return petValidationResult;
+        }
+
+        var validationResult =
             await ValidateVeterinarianAndAvailabilityAsync(request);
 
         if (validationResult != null)
@@ -247,7 +338,7 @@ public class AppointmentsController : ControllerBase
             });
         }
 
-        appointment.PetId = request.PetId;
+        appointment.PetId = request.PetId!.Value;
         appointment.VeterinarianId = request.VeterinarianId;
         appointment.AvailabilityId = request.AvailabilityId;
         appointment.AppointmentDate = appointmentDate;
@@ -526,93 +617,53 @@ public class AppointmentsController : ControllerBase
         };
     }
     private async Task<ActionResult?> ValidateVeterinarianAndAvailabilityAsync(
-    AppointmentRequest request)
-{
-    try
-    {
-        var veterinarian =
-            await _veterinarianServiceClient.GetVeterinarianAsync(
-                request.VeterinarianId, CurrentToken);
-
-        if (veterinarian == null)
-        {
-            return NotFound(new
-            {
-                message = "Veterinarian not found."
-            });
-        }
-
-        var availabilities =
-            await _veterinarianServiceClient.GetAvailabilityAsync(
-                request.VeterinarianId, CurrentToken);
-
-        var availability = availabilities?.FirstOrDefault(
-            a => a.Id == request.AvailabilityId &&
-                 a.VeterinarianId == request.VeterinarianId);
-
-        if (availability == null)
-        {
-            return NotFound(new
-            {
-                message = "Availability slot not found."
-            });
-        }
-
-        var timeZone =
-            TimeZoneInfo.FindSystemTimeZoneById("Europe/Ljubljana");
-
-        var appointmentDate = TimeZoneInfo.ConvertTime(
-            request.AppointmentDate!.Value, timeZone);
-
-        if (DateOnly.FromDateTime(appointmentDate.DateTime)
-                != availability.Date ||
-            TimeOnly.FromDateTime(appointmentDate.DateTime)
-                != availability.StartTime)
-        {
-            return BadRequest(new
-            {
-                message = "Appointment date and time must match the selected availability slot."
-            });
-        }
-
-        return null;
-    }
-    catch (Exception ex) when (
-        ex is HttpRequestException ||
-        ex is TaskCanceledException ||
-        ex is JsonException)
-    {
-        return StatusCode(503, new
-        {
-            message = "Veterinarian Service is currently unavailable."
-        });
-    }
-}
-private async Task<ActionResult?> ValidateAppointmentAccessAsync(
-    Appointment appointment)
-{
-    if (User.IsInRole("OWNER"))
-    {
-        if (appointment.UserId != CurrentUserId)
-        {
-            return Forbid();
-        }
-
-        return null;
-    }
-
-    if (User.IsInRole("VETERINARIAN"))
+        AppointmentRequest request)
     {
         try
         {
             var veterinarian =
                 await _veterinarianServiceClient.GetVeterinarianAsync(
-                    appointment.VeterinarianId, CurrentToken);
+                request.VeterinarianId, CurrentToken);
 
-            if (veterinarian == null ||
-                veterinarian.UserId != CurrentUserId)
+            if (veterinarian == null)
             {
-                return Forbid();
+                return NotFound(new
+                {
+                    message = "Veterinarian not found."
+                });
+            }
+
+            var availabilities =
+                await _veterinarianServiceClient.GetAvailabilityAsync(
+                request.VeterinarianId, CurrentToken);
+
+            var availability = availabilities?.FirstOrDefault(
+                a => a.Id == request.AvailabilityId &&
+                a.VeterinarianId == request.VeterinarianId);
+
+            if (availability == null)
+            {
+                return NotFound(new
+                {
+                    message = "Availability slot not found."
+                });
+            }
+
+            var timeZone =
+            TimeZoneInfo.FindSystemTimeZoneById("Europe/Ljubljana");
+
+            var appointmentDate = TimeZoneInfo.ConvertTime(
+            request.AppointmentDate!.Value, timeZone);
+
+            if (DateOnly.FromDateTime(appointmentDate.DateTime)
+                != availability.Date ||
+                TimeOnly.FromDateTime(appointmentDate.DateTime)
+                != availability.StartTime)
+            {
+                return BadRequest(new
+                {
+                    message = "Appointment date and time must match the selected availability slot."
+                });
             }
 
             return null;
@@ -628,8 +679,95 @@ private async Task<ActionResult?> ValidateAppointmentAccessAsync(
             });
         }
     }
+    private async Task<ActionResult?> ValidateAppointmentAccessAsync(
+        Appointment appointment)
+    {
+        if (User.IsInRole("OWNER"))
+        {
+            if (appointment.UserId != CurrentUserId)
+            {
+                return Forbid();
+            }
 
-    return Forbid();
-}
+            return null;
+        }
+
+        if (User.IsInRole("VETERINARIAN"))
+        {
+            try
+            {
+                var veterinarian =
+                    await _veterinarianServiceClient.GetVeterinarianAsync(
+                    appointment.VeterinarianId, CurrentToken);
+
+                if (veterinarian == null ||
+                    veterinarian.UserId != CurrentUserId)
+                {
+                    return Forbid();
+                }
+
+                return null;
+            }
+            catch (Exception ex) when (
+                ex is HttpRequestException ||
+                ex is TaskCanceledException ||
+                ex is JsonException)
+            {
+                return StatusCode(503, new
+                {
+                    message = "Veterinarian Service is currently unavailable."
+                });
+            }
+        }
+
+        return Forbid();
+    }
+    private async Task<ActionResult?> ValidatePetAsync(
+        AppointmentRequest request)
+    {
+        if (request.PetId == null || request.PetId == Guid.Empty)
+        {
+            return BadRequest(new
+            {
+                message = "Invalid pet ID."
+            });
+        }
+
+        try
+        {
+            var pet = await _petServiceClient.GetPetAsync(
+                request.PetId.Value, CurrentToken);
+
+            if (pet == null)
+            {
+                return NotFound(new
+                {
+                    message = "Pet not found."
+                });
+            }
+
+            if (pet.Id != request.PetId.Value ||
+                pet.OwnerId != Guid.Parse(CurrentUserId))
+            {
+                return Forbid();
+            }
+
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (Exception ex) when (
+            ex is HttpRequestException ||
+            ex is TaskCanceledException ||
+            ex is JsonException)
+        {
+            return StatusCode(503, new
+            {
+                message = "Pet Service is currently unavailable."
+            });
+        }
+    }
 
 }

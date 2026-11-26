@@ -4,8 +4,8 @@ namespace AppointmentService.DTOs;
 
 public class AppointmentRequest
 {
-    [Range(1, int.MaxValue)]
-    public int PetId { get; set; }
+    [Required]
+    public Guid? PetId { get; set; }
 
     [Range(1, int.MaxValue)]
     public int VeterinarianId { get; set; }

@@ -44,6 +44,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid or expired JWT token"
           }
         }
       },
@@ -72,8 +75,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
+          "201": {
+            "description": "Created",
             "content": {
               "text/plain": {
                 "schema": {
@@ -91,6 +94,24 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid or expired JWT token"
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "403": {
+            "description": "Insufficient permissions or resource ownership"
+          },
+          "404": {
+            "description": "Requested resource not found"
+          },
+          "409": {
+            "description": "Veterinarian profile already exists or availability overlaps"
+          },
+          "503": {
+            "description": "User Service is currently unavailable"
           }
         }
       }
@@ -132,6 +153,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid or expired JWT token"
+          },
+          "404": {
+            "description": "Requested resource not found"
           }
         }
       },
@@ -191,6 +218,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid or expired JWT token"
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "403": {
+            "description": "Insufficient permissions or resource ownership"
+          },
+          "404": {
+            "description": "Requested resource not found"
           }
         }
       },
@@ -211,8 +250,17 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Missing, invalid or expired JWT token"
+          },
+          "403": {
+            "description": "Insufficient permissions or resource ownership"
+          },
+          "404": {
+            "description": "Requested resource not found"
           }
         }
       }
@@ -263,6 +311,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid or expired JWT token"
+          },
+          "404": {
+            "description": "Requested resource not found"
           }
         }
       },
@@ -303,8 +357,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
+          "201": {
+            "description": "Created",
             "content": {
               "text/plain": {
                 "schema": {
@@ -322,6 +376,21 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid or expired JWT token"
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "403": {
+            "description": "Insufficient permissions or resource ownership"
+          },
+          "404": {
+            "description": "Requested resource not found"
+          },
+          "409": {
+            "description": "Veterinarian profile already exists or availability overlaps"
           }
         }
       }
@@ -393,6 +462,21 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid or expired JWT token"
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "403": {
+            "description": "Insufficient permissions or resource ownership"
+          },
+          "404": {
+            "description": "Requested resource not found"
+          },
+          "409": {
+            "description": "Veterinarian profile already exists or availability overlaps"
           }
         }
       },
@@ -423,8 +507,17 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Missing, invalid or expired JWT token"
+          },
+          "403": {
+            "description": "Insufficient permissions or resource ownership"
+          },
+          "404": {
+            "description": "Requested resource not found"
           }
         }
       }
@@ -573,8 +666,21 @@
           }
         }
       }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Enter the JWT token obtained from User Service.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
     }
   },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ],
   "tags": [
     {
       "name": "Veterinarians"

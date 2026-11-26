@@ -6,7 +6,7 @@ public class AppointmentResponse
 
     public string UserId { get; set; } = string.Empty;
 
-    public int PetId { get; set; }
+    public Guid PetId { get; set; }
 
     public int VeterinarianId { get; set; }
 

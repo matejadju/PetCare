@@ -11,7 +11,7 @@ public class Appointment
     public string UserId { get; set; } = string.Empty;
 
     [Required]
-    public int PetId { get; set; }
+    public Guid PetId { get; set; }
 
     [Required]
     public int VeterinarianId { get; set; }

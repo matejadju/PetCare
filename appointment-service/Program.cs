@@ -13,7 +13,15 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddScoped<VeterinarianServiceClient>();
+builder.Services.AddHttpClient("PetService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:PetService"]!);
 
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+builder.Services.AddScoped<PetServiceClient>();
 builder.Services.AddHttpClient("VeterinarianService", client =>
 {
     client.BaseAddress = new Uri(
