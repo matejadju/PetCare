@@ -1,0 +1,221 @@
+.dashboard {
+    min-height: 100vh;
+    background: #f3f7f4;
+}
+
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 5%;
+    background: white;
+    border-bottom: 1px solid #e1e9e3;
+}
+
+.dashboard-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #34785a;
+    font-size: 25px;
+    font-weight: 800;
+}
+
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.logout-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid #dce5df;
+    border-radius: 10px;
+    background: white;
+    color: #34785a;
+    font-weight: 600;
+}
+
+.logout-button:hover {
+    background: #e8f2eb;
+}
+
+.dashboard-content {
+    max-width: 1350px;
+    margin: 0 auto;
+    padding: 35px 5%;
+}
+
+.welcome-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 40px;
+    margin-bottom: 35px;
+    border-radius: 24px;
+    background: linear-gradient(120deg, #34785a, #65a784);
+    color: white;
+}
+
+.welcome-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    opacity: 0.8;
+}
+
+.welcome-banner h1 {
+    font-size: 34px;
+    margin: 15px 0 10px;
+}
+
+.welcome-banner p {
+    margin: 0;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+.welcome-icon {
+    opacity: 0.2;
+    transform: rotate(-15deg);
+    flex-shrink: 0;
+}
+
+.dashboard-content h2 {
+    font-size: 23px;
+    margin-bottom: 22px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+}
+
+.dashboard-card {
+    padding: 26px;
+    border: 1px solid #e5ece7;
+    border-radius: 18px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(32, 75, 52, 0.03);
+}
+
+.card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.card-icon.green {
+    background: #e3f2e8;
+    color: #34785a;
+}
+
+.card-icon.blue {
+    background: #e3effc;
+    color: #4079b9;
+}
+
+.card-icon.purple {
+    background: #eee8fa;
+    color: #8461bd;
+}
+
+.card-icon.orange {
+    background: #fff0dc;
+    color: #d78a37;
+}
+
+.card-icon.pink {
+    background: #fce8ee;
+    color: #c65e81;
+}
+
+.dashboard-card h3 {
+    font-size: 18px;
+    margin: 0 0 10px;
+}
+
+.dashboard-card p {
+    color: #7a8b81;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.loading-screen {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    color: #34785a;
+    font-weight: 600;
+}
+
+@media (max-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .welcome-banner {
+        padding: 26px;
+    }
+
+    .welcome-banner h1 {
+        font-size: 25px;
+    }
+
+    .welcome-icon {
+        display: none;
+    }
+
+    .header-user > span,
+    .header-user > svg {
+        display: none;
+    }
+}
+.dashboard-content {
+    max-width: 1500px;
+    padding: 0;
+    margin: 0 auto;
+}
+
+.dashboard-card {
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    border-color: #b7d4c2;
+    box-shadow: 0 8px 25px rgba(32, 75, 52, 0.08);
+}
+
+.dashboard-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.card-arrow {
+    color: #a3b4a9;
+}
+
+.dashboard-card:hover .card-arrow {
+    color: #34785a;
+}

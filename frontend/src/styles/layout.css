@@ -1,0 +1,265 @@
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 18px;
+    background: white;
+    border-right: 1px solid #e1e9e3;
+    z-index: 100;
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px;
+    margin-bottom: 42px;
+    color: #34785a;
+    font-size: 27px;
+    font-weight: 800;
+}
+
+.sidebar-label {
+    padding: 0 14px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #95a49a;
+}
+
+.sidebar-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow-y: auto;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 13px 14px;
+    border-radius: 10px;
+    color: #697d70;
+    font-size: 14px;
+    font-weight: 500;
+    transition: 0.2s ease;
+}
+
+.sidebar-link:hover {
+    background: #f0f6f2;
+    color: #34785a;
+}
+
+.sidebar-link.active {
+    background: #e3f0e7;
+    color: #34785a;
+    font-weight: 700;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 8px;
+    border-top: 1px solid #e5ece7;
+}
+
+.user-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #e0eee5;
+    color: #34785a;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.sidebar-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.sidebar-user-info strong {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-user-info span {
+    font-size: 12px;
+    color: #82978a;
+}
+
+.sidebar-logout {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 13px 14px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #b65b5b;
+    font-size: 14px;
+}
+
+.sidebar-logout:hover {
+    background: #fdf0f0;
+}
+
+.main-area {
+    flex: 1;
+    min-width: 0;
+    margin-left: 260px;
+}
+
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 30px;
+    min-height: 75px;
+    background: white;
+    border-bottom: 1px solid #e1e9e3;
+}
+
+.header-left,
+.header-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-left {
+    font-size: 14px;
+    color: #82978a;
+}
+
+.header-profile {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.main-content {
+    padding: 30px;
+}
+
+.mobile-menu,
+.mobile-close {
+    display: none;
+    border: none;
+    background: transparent;
+    color: #34785a;
+}
+
+.sidebar-overlay {
+    display: none;
+}
+
+@media (max-width: 850px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+    }
+
+    .sidebar.sidebar-open {
+        transform: translateX(0);
+    }
+
+    .main-area {
+        margin-left: 0;
+    }
+
+    .mobile-menu,
+    .mobile-close {
+        display: flex;
+    }
+
+    .mobile-close {
+        margin-left: auto;
+    }
+
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 99;
+    }
+
+    .main-content {
+        padding: 20px;
+    }
+
+    .main-header {
+        padding: 16px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-profile > span {
+        display: none;
+    }
+}
+.placeholder-page h1 {
+    margin: 0 0 24px;
+    font-size: 28px;
+}
+
+.placeholder-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 350px;
+    padding: 30px;
+    background: white;
+    border: 1px solid #e1e9e3;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.placeholder-card svg {
+    color: #34785a;
+    margin-bottom: 15px;
+}
+
+.placeholder-card h2 {
+    margin: 10px 0;
+}
+
+.placeholder-card p {
+    color: #82978a;
+}
+.user-avatar {
+    overflow: hidden;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
