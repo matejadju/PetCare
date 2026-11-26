@@ -1,0 +1,40 @@
+services:
+  veterinarian-db:
+    image: postgres:17-alpine
+    container_name: petcare-veterinarian-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: veterinarian_db
+      POSTGRES_USER: petcare
+      POSTGRES_PASSWORD: ${VET_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - veterinarian_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petcare -d veterinarian_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  appointment-db:
+    image: postgres:17-alpine
+    container_name: petcare-appointment-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: appointment_db
+      POSTGRES_USER: petcare
+      POSTGRES_PASSWORD: ${APPOINTMENT_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - appointment_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petcare -d appointment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  veterinarian_data:
+  appointment_data:
