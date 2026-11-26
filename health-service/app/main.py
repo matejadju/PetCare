@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import Base, engine, get_db
 from app import models
+from app.routers import vaccinations
 
 
 @asynccontextmanager
@@ -22,6 +23,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+app.include_router(vaccinations.router)
 
 
 @app.get("/")
