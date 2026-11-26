@@ -5,6 +5,10 @@ import {
     publicUserSelect
 } from './auth.service.js';
 
+import {
+    hasActiveUserAppointments
+} from '../clients/appointment.client.js';
+
 const limitedUserSelect = {
     id: true,
     name: true,
@@ -96,7 +100,44 @@ export async function changePassword(id, data) {
 }
 
 // DELETE /users/:id
-export async function deleteUser(id) {
+export async function deleteUser(
+    id,
+    authorization
+) {
+    const user = await prisma.user.findUnique({
+        where: { id },
+
+        select: {
+            id: true
+        }
+    });
+
+    if (!user) {
+        const error = new Error('User not found');
+
+        error.status = 404;
+        error.code = 'USER_NOT_FOUND';
+
+        throw error;
+    }
+
+    const hasActiveAppointments =
+        await hasActiveUserAppointments(
+            id,
+            authorization
+        );
+
+    if (hasActiveAppointments) {
+        const error = new Error(
+            'Cannot delete user with active appointments'
+        );
+
+        error.status = 409;
+        error.code = 'ACTIVE_APPOINTMENTS_EXIST';
+
+        throw error;
+    }
+
     await prisma.user.delete({
         where: { id }
     });

@@ -4,6 +4,10 @@ import {
     createError
 } from '../utils/errors.js';
 
+import {
+    hasActivePetAppointments
+} from '../clients/appointment.client.js';
+
 const latestWeightInclude = {
     weights: {
         orderBy: [
@@ -42,9 +46,27 @@ export async function getPets(ownerId) {
 }
 
 // GET /pets/:id
-export async function getPetById(id, ownerId) {
+export async function getPetById(id, user) {
+    if (
+        user.role !== 'OWNER' &&
+        user.role !== 'VETERINARIAN'
+    ) {
+        throw createError(
+            'Access denied',
+            403,
+            'ACCESS_DENIED'
+        );
+    }
+
     const pet = await prisma.pet.findFirst({
-        where: { id, ownerId },
+        where: {
+            id,
+
+            ...(user.role === 'OWNER' && {
+                ownerId: user.sub
+            })
+        },
+
         include: latestWeightInclude
     });
 
@@ -113,8 +135,29 @@ export async function updatePet(id, ownerId, data) {
 }
 
 // DELETE /pets/:id
-export async function deletePet(id, ownerId) {
+export async function deletePet(
+    id,
+    ownerId,
+    authorization
+) {
+    const hasActiveAppointments =
+        await hasActivePetAppointments(
+            id,
+            authorization
+        );
+
+    if (hasActiveAppointments) {
+        throw createError(
+            'Cannot delete pet with active appointments',
+            409,
+            'ACTIVE_APPOINTMENTS_EXIST'
+        );
+    }
+
     await prisma.pet.delete({
-        where: { id, ownerId }
+        where: {
+            id,
+            ownerId
+        }
     });
 }

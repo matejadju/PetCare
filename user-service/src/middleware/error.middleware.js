@@ -44,6 +44,17 @@ export function errorHandler(err, req, res, next) {
         });
     }
 
+    if (
+        Number.isInteger(err.status) &&
+        err.status >= 500 &&
+        err.status <= 599
+    ) {
+        return res.status(err.status).json({
+            code: err.code || 'SERVICE_ERROR',
+            message: err.message
+        });
+    }
+
     console.error(err);
 
     return res.status(500).json({
