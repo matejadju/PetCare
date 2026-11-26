@@ -1,0 +1,41 @@
+services:
+  appointment-db:
+    image: postgres:17-alpine
+    container_name: petcare-appointment-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: appointment_db
+      POSTGRES_USER: petcare
+      POSTGRES_PASSWORD: ${APPOINTMENT_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - appointment_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petcare -d appointment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  appointment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: petcare-appointment-service
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8004:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=appointment-db;Port=5432;Database=appointment_db;Username=petcare;Password=${APPOINTMENT_DB_PASSWORD}"
+      Services__VeterinarianService: "http://host.docker.internal:8003"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+    depends_on:
+      appointment-db:
+        condition: service_healthy
+
+volumes:
+  appointment_data:
+    name: petcare_appointment_data

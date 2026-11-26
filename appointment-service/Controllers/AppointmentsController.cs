@@ -4,10 +4,12 @@ using AppointmentService.Data;
 using AppointmentService.DTOs;
 using AppointmentService.Models;
 using Npgsql;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AppointmentService.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("appointments")]
 public class AppointmentsController : ControllerBase
 {

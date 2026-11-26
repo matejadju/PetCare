@@ -3,18 +3,32 @@ using Microsoft.EntityFrameworkCore;
 using VeterinarianService.Data;
 using VeterinarianService.DTOs;
 using VeterinarianService.Models;
+using Microsoft.AspNetCore.Authorization;
+using Npgsql;
+using VeterinarianService.Services;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace VeterinarianService.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("veterinarians")]
 public class VeterinariansController : ControllerBase
 {
     private readonly AppDbContext _context;
 
-    public VeterinariansController(AppDbContext context)
+    private string CurrentUserId =>
+        User.FindFirst("sub")!.Value;
+
+    private readonly UserServiceClient _userServiceClient;
+
+    public VeterinariansController(
+        AppDbContext context,
+        UserServiceClient userServiceClient)
     {
         _context = context;
+        _userServiceClient = userServiceClient;
     }
 
     // GET /veterinarians
@@ -49,12 +63,60 @@ public class VeterinariansController : ControllerBase
 
     // POST /veterinarians
     [HttpPost]
+    [Authorize(Roles = "VETERINARIAN")]
     public async Task<ActionResult<VeterinarianResponse>> Create(
         VeterinarianRequest request)
     {
+            var token = AuthenticationHeaderValue.Parse(
+        Request.Headers.Authorization.ToString()
+    ).Parameter!;
+
+    UserDto? user;
+
+    try
+    {
+        user = await _userServiceClient.GetUserAsync(
+            CurrentUserId, token
+        );
+    }
+    catch (Exception ex) when (
+        ex is HttpRequestException ||
+        ex is TaskCanceledException ||
+        ex is JsonException)
+    {
+        return StatusCode(503, new
+        {
+            message = "User Service is currently unavailable."
+        });
+    }
+
+    if (user == null)
+    {
+        return NotFound(new
+        {
+            message = "User not found."
+        });
+    }
+
+    if (user.Id != CurrentUserId ||
+        user.Role != "VETERINARIAN")
+    {
+        return Forbid();
+    }
+        var exists = await _context.Veterinarians
+            .AnyAsync(v => v.UserId == CurrentUserId);
+
+        if (exists)
+        {
+            return Conflict(new
+            {
+                message = "You already have a veterinarian profile."
+            });
+        }
+
         var veterinarian = new Veterinarian
         {
-            UserId = Guid.NewGuid().ToString(),
+            UserId = CurrentUserId,
             FirstName = request.FirstName,
             LastName = request.LastName,
             Specialization = request.Specialization,
@@ -65,7 +127,20 @@ public class VeterinariansController : ControllerBase
         };
 
         _context.Veterinarians.Add(veterinarian);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (
+            ex.InnerException is PostgresException pg &&
+            pg.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            return Conflict(new
+            {
+                message = "You already have a veterinarian profile."
+            });
+        }
 
         return CreatedAtAction(
             nameof(GetById),
@@ -76,6 +151,7 @@ public class VeterinariansController : ControllerBase
 
     // PUT /veterinarians/{id}
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "VETERINARIAN")]
     public async Task<ActionResult<VeterinarianResponse>> Update(
         int id, VeterinarianRequest request)
     {
@@ -87,6 +163,11 @@ public class VeterinariansController : ControllerBase
             {
                 message = "Veterinarian not found."
             });
+        }
+
+        if (veterinarian.UserId != CurrentUserId)
+        {
+            return Forbid();
         }
 
         veterinarian.FirstName = request.FirstName;
@@ -104,6 +185,7 @@ public class VeterinariansController : ControllerBase
 
     // DELETE /veterinarians/{id}
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "VETERINARIAN")]
     public async Task<IActionResult> Delete(int id)
     {
         var veterinarian = await _context.Veterinarians.FindAsync(id);
@@ -114,6 +196,11 @@ public class VeterinariansController : ControllerBase
             {
                 message = "Veterinarian not found."
             });
+        }
+
+        if (veterinarian.UserId != CurrentUserId)
+        {
+            return Forbid();
         }
 
         _context.Veterinarians.Remove(veterinarian);
@@ -150,18 +237,23 @@ public class VeterinariansController : ControllerBase
 
     // POST /veterinarians/{id}/availability
     [HttpPost("{id:int}/availability")]
+    [Authorize(Roles = "VETERINARIAN")]
     public async Task<ActionResult<AvailabilityResponse>> CreateAvailability(
         int id, AvailabilityRequest request)
     {
-        var exists = await _context.Veterinarians
-            .AnyAsync(v => v.Id == id);
+        var veterinarian = await _context.Veterinarians.FindAsync(id);
 
-        if (!exists)
+        if (veterinarian == null)
         {
             return NotFound(new
             {
                 message = "Veterinarian not found."
             });
+        }
+
+        if (veterinarian.UserId != CurrentUserId)
+        {
+            return Forbid();
         }
 
         var date = request.Date!.Value;
@@ -207,7 +299,20 @@ public class VeterinariansController : ControllerBase
         };
 
         _context.Availabilities.Add(availability);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (
+            ex.InnerException is PostgresException pg &&
+            pg.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            return Conflict(new
+            {
+                message = "This time slot already exists."
+            });
+        }
 
         return CreatedAtAction(
             nameof(GetAvailability),
@@ -218,9 +323,25 @@ public class VeterinariansController : ControllerBase
 
     // PUT /veterinarians/{id}/availability/{availabilityId}
     [HttpPut("{id:int}/availability/{availabilityId:int}")]
+    [Authorize(Roles = "VETERINARIAN")]
     public async Task<ActionResult<AvailabilityResponse>> UpdateAvailability(
         int id, int availabilityId, AvailabilityRequest request)
     {
+        var veterinarian = await _context.Veterinarians.FindAsync(id);
+
+        if (veterinarian == null)
+        {
+            return NotFound(new
+            {
+                message = "Veterinarian not found."
+            });
+        }
+
+        if (veterinarian.UserId != CurrentUserId)
+        {
+            return Forbid();
+        }
+
         var availability = await _context.Availabilities
             .FirstOrDefaultAsync(a =>
                 a.Id == availabilityId &&
@@ -273,16 +394,44 @@ public class VeterinariansController : ControllerBase
         availability.StartTime = startTime;
         availability.EndTime = endTime;
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (
+            ex.InnerException is PostgresException pg &&
+            pg.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            return Conflict(new
+            {
+                message = "This time slot already exists."
+            });
+        }
 
         return Ok(ToAvailabilityResponse(availability));
     }
 
     // DELETE /veterinarians/{id}/availability/{availabilityId}
     [HttpDelete("{id:int}/availability/{availabilityId:int}")]
+    [Authorize(Roles = "VETERINARIAN")]
     public async Task<IActionResult> DeleteAvailability(
         int id, int availabilityId)
     {
+        var veterinarian = await _context.Veterinarians.FindAsync(id);
+
+        if (veterinarian == null)
+        {
+            return NotFound(new
+            {
+                message = "Veterinarian not found."
+            });
+        }
+
+        if (veterinarian.UserId != CurrentUserId)
+        {
+            return Forbid();
+        }
+
         var availability = await _context.Availabilities
             .FirstOrDefaultAsync(a =>
                 a.Id == availabilityId &&
@@ -302,7 +451,8 @@ public class VeterinariansController : ControllerBase
         return NoContent();
     }
 
-    private static VeterinarianResponse ToResponse(Veterinarian veterinarian)
+    private static VeterinarianResponse ToResponse(
+        Veterinarian veterinarian)
     {
         return new VeterinarianResponse
         {

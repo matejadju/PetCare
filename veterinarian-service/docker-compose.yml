@@ -1,0 +1,48 @@
+services:
+  veterinarian-db:
+    image: postgres:17-alpine
+    container_name: petcare-veterinarian-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: veterinarian_db
+      POSTGRES_USER: petcare
+      POSTGRES_PASSWORD: ${VET_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - veterinarian_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petcare -d veterinarian_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  veterinarian-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: petcare-veterinarian-service
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8003:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=veterinarian-db;Port=5432;Database=veterinarian_db;Username=petcare;Password=${VET_DB_PASSWORD}"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+      Services__UserService: "http://petcare-user-service:8001"
+    networks:
+      - default
+      - petcare-network
+    depends_on:
+      veterinarian-db:
+        condition: service_healthy
+
+volumes:
+  veterinarian_data:
+    name: petcare_veterinarian_data
+
+networks:
+  petcare-network:
+    external: true
