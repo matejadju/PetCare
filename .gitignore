@@ -183,3 +183,6 @@ vite.config.ts.timestamp-*
 
 # Logs
 *.log
+
+# Temporary local Docker Compose configuration
+/docker-compose.yml
