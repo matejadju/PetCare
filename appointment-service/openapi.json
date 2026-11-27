@@ -349,7 +349,7 @@
           "Appointments"
         ],
         "summary": "Check active appointments for a user",
-        "description": "Checks whether the authenticated owner has pending or confirmed appointments.",
+        "description": "Checks whether the authenticated owner or veterinarian has pending or confirmed appointments.",
         "parameters": [
           {
             "name": "userId",
@@ -387,6 +387,9 @@
           },
           "403": {
             "description": "Insufficient permissions or resource ownership"
+          },
+          "503": {
+            "description": "Veterinarian Service is currently unavailable"
           }
         }
       }

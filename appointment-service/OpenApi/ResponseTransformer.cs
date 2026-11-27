@@ -72,16 +72,23 @@ public class ResponseTransformer : IOpenApiOperationTransformer
             return Task.CompletedTask;
         }
 
-        // Active appointments for a user
+       // Active appointments for a user
         if (method == "GET" &&
             path.Contains("users/") &&
             path.EndsWith("/active"))
         {
-            operation.Summary = "Check active appointments for a user";
+            operation.Summary =
+                "Check active appointments for a user";
 
             operation.Description =
-                "Checks whether the authenticated owner has pending " +
-                "or confirmed appointments.";
+                "Checks whether the authenticated owner or " +
+                "veterinarian has pending or confirmed appointments.";
+
+            operation.Responses["503"] = new OpenApiResponse
+            {
+                Description =
+                    "Veterinarian Service is currently unavailable"
+            };
 
             return Task.CompletedTask;
         }

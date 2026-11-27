@@ -169,7 +169,7 @@ public class AppointmentsController : ControllerBase
     }
     // GET /appointments/users/{userId}/active
     [HttpGet("users/{userId:guid}/active")]
-    [Authorize(Roles = "OWNER")]
+    [Authorize(Roles = "OWNER,VETERINARIAN")]
     public async Task<ActionResult<ActiveAppointmentsResponse>>
         HasActiveAppointmentsForUser(Guid userId)
     {
@@ -178,11 +178,47 @@ public class AppointmentsController : ControllerBase
             return Forbid();
         }
 
-        var hasActiveAppointments =
-            await _context.Appointments.AnyAsync(a =>
-                a.UserId == userId.ToString() &&
-                (a.Status == "pending" ||
-                a.Status == "confirmed"));
+        bool hasActiveAppointments;
+
+        if (User.IsInRole("OWNER"))
+        {
+            hasActiveAppointments =
+                await _context.Appointments.AnyAsync(a =>
+                    a.UserId == userId.ToString() &&
+                    (a.Status == "pending" ||
+                    a.Status == "confirmed"));
+        }
+        else
+        {
+            try
+            {
+                var veterinarians =
+                    await _veterinarianServiceClient
+                        .GetAllVeterinariansAsync(CurrentToken);
+
+                var veterinarian = veterinarians
+                    .FirstOrDefault(v =>
+                        v.UserId == userId.ToString());
+
+                hasActiveAppointments =
+                    veterinarian != null &&
+                    await _context.Appointments.AnyAsync(a =>
+                        a.VeterinarianId == veterinarian.Id &&
+                        (a.Status == "pending" ||
+                        a.Status == "confirmed"));
+            }
+            catch (Exception ex) when (
+                ex is HttpRequestException ||
+                ex is TaskCanceledException ||
+                ex is JsonException)
+            {
+                return StatusCode(503, new
+                {
+                    message =
+                        "Veterinarian Service is currently unavailable."
+                });
+            }
+        }
 
         return Ok(new ActiveAppointmentsResponse
         {
