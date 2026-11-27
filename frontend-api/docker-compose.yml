@@ -1,0 +1,41 @@
+services:
+  frontend-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: petcare-frontend-api
+
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    environment:
+      PORT: 8000
+      NODE_ENV: production
+      FRONTEND_URL: http://localhost:5173
+
+      USER_SERVICE_URL: http://user-service:8001
+      PET_SERVICE_URL: http://pet-service:8002
+      VETERINARIAN_SERVICE_URL: http://veterinarian-service:8003
+      APPOINTMENT_SERVICE_URL: http://appointment-service:8004
+      HEALTH_SERVICE_URL: http://health-service:8005
+
+    networks:
+      - petcare-network
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  petcare-network:
+    external: true

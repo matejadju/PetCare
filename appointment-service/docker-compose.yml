@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: petcare
       POSTGRES_PASSWORD: ${APPOINTMENT_DB_PASSWORD}
     ports:
-      - "127.0.0.1:5435:5432"
+      - "127.0.0.1:5437:5432"
     volumes:
       - appointment_data:/var/lib/postgresql/data
     healthcheck:

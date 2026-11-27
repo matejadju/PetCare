@@ -1,0 +1,319 @@
+.vet-profile-banner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px;
+    background: #eaf5ee;
+    border: 1px solid #d5e9db;
+    border-radius: 16px;
+}
+
+.vet-profile-banner-icon {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: #d3eadb;
+    color: #28734a;
+}
+
+.vet-profile-banner h2 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    color: #245c3b;
+}
+
+.vet-profile-banner p {
+    margin: 0;
+    color: #5d7466;
+    font-size: 14px;
+}
+
+.vet-profile-banner > button {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.vet-search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #ffffff;
+    border: 1px solid #dfe7e2;
+    border-radius: 12px;
+    color: #718078;
+}
+
+.vet-search:focus-within {
+    border-color: #459367;
+    box-shadow: 0 0 0 3px #45936715;
+}
+
+.vet-search input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    color: #25372d;
+}
+
+.vet-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(min(100%, 350px), 1fr)
+    );
+    gap: 22px;
+    align-items: start;
+}
+
+.vet-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #e1e9e3;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px #183e2510;
+    min-width: 0;
+}
+
+.vet-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.vet-avatar {
+    display: grid;
+    place-items: center;
+    width: 68px;
+    height: 68px;
+    flex-shrink: 0;
+    border-radius: 18px;
+    background: #e6f3eb;
+    color: #39815a;
+}
+
+.vet-card-title {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.vet-card-title h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #24392c;
+}
+
+.vet-specialization {
+    font-size: 13px;
+    color: #39815a;
+    font-weight: 600;
+}
+
+.vet-own-badge {
+    padding: 4px 10px;
+    background: #eaf5ee;
+    color: #28734a;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 20px;
+}
+
+.vet-card-information {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+.vet-information-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    font-size: 14px;
+    color: #53665a;
+    overflow-wrap: anywhere;
+}
+
+.vet-information-row svg {
+    color: #459367;
+    flex-shrink: 0;
+}
+
+.vet-description {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #65756a;
+    overflow-wrap: anywhere;
+}
+
+.vet-availability-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 13px 15px;
+    border: 1px solid #d6e8dc;
+    border-radius: 10px;
+    background: #f0f8f3;
+    color: #32784e;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.vet-availability-toggle:hover {
+    background: #e0f0e5;
+}
+
+.vet-availability-toggle span {
+    flex: 1;
+    text-align: left;
+}
+
+.vet-availability-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-top: 1px solid #e6ece8;
+    padding-top: 18px;
+}
+
+.vet-availability-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.vet-availability-heading h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #304638;
+}
+
+.vet-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vet-slot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px;
+    background: #f7faf8;
+    border: 1px solid #e3ebe5;
+    border-radius: 10px;
+}
+
+.vet-slot-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    background: #e3f0e7;
+    color: #39815a;
+    border-radius: 10px;
+}
+
+.vet-slot-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.vet-slot-info strong {
+    color: #344a3c;
+    font-size: 14px;
+}
+
+.vet-slot-info span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #708176;
+    font-size: 13px;
+}
+
+.vet-slot-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.vet-delete-button {
+    color: #c74a4a;
+}
+
+.vet-delete-button:hover {
+    background: #fcecec;
+}
+
+.vet-empty-slots {
+    margin: 0;
+    padding: 20px;
+    border: 1px dashed #dce7df;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 14px;
+    color: #718078;
+}
+
+.availability-hint {
+    margin: 12px 0;
+    font-size: 12px;
+    color: #78877d;
+    line-height: 1.6;
+}
+
+.vet-availability-section .health-form-card {
+    padding: 16px;
+    box-shadow: none;
+}
+
+.vet-availability-section .edit-form-grid {
+    grid-template-columns: 1fr;
+}
+
+@media (max-width: 650px) {
+    .vet-profile-banner {
+        flex-wrap: wrap;
+        padding: 18px;
+    }
+
+    .vet-profile-banner > button {
+        width: 100%;
+        margin-left: 0;
+        justify-content: center;
+    }
+
+    .vet-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vet-card {
+        padding: 18px;
+    }
+
+    .vet-slot {
+        flex-wrap: wrap;
+    }
+}
