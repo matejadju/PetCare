@@ -4,8 +4,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 
-import './styles/health.css';
-import './styles/veterinarians.css';
+import "./styles/profile.css";
+import "./styles/health.css";
+import "./styles/veterinarians.css";
 
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
