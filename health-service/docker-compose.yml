@@ -16,6 +16,8 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    networks:
+      - health-db-network
 
   health-service:
     build: .
@@ -27,12 +29,23 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_ISSUER: ${JWT_ISSUER}
       JWT_AUDIENCE: ${JWT_AUDIENCE}
+      PET_SERVICE_URL: http://pet-service:8002
     depends_on:
       health-db:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - petcare-network
+      - health-db-network
 
 volumes:
   health-data:
     external: true
     name: petcare-health-data
+
+networks:
+  petcare-network:
+    external: true
+
+  health-db-network:
+    driver: bridge

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Vaccination
 from app.security import require_roles
+from app.pet_client import verify_pet_access
 from app.schemas import (
     VaccinationCreate,
     VaccinationUpdate,
@@ -25,9 +26,11 @@ def get_pet_vaccinations(
         require_roles("OWNER", "VETERINARIAN")
     )
 ):
+    pet = verify_pet_access(pet_id, current_user["token"])
+
     query = (
         select(Vaccination)
-        .where(Vaccination.pet_id == pet_id)
+        .where(Vaccination.pet_id == pet["id"])
         .order_by(Vaccination.vaccination_date.desc())
     )
 
@@ -53,6 +56,11 @@ def get_vaccination(
             detail="Vaccination not found"
         )
 
+    verify_pet_access(
+        vaccination.pet_id,
+        current_user["token"]
+    )
+
     return vaccination
 
 
@@ -68,7 +76,13 @@ def create_vaccination(
         require_roles("VETERINARIAN")
     )
 ):
+    pet = verify_pet_access(
+        data.pet_id,
+        current_user["token"]
+    )
+
     vaccination_data = data.model_dump()
+    vaccination_data["pet_id"] = pet["id"]
     vaccination_data["veterinarian_id"] = current_user["id"]
 
     vaccination = Vaccination(**vaccination_data)
@@ -106,6 +120,11 @@ def update_vaccination(
             detail="You cannot modify this vaccination"
         )
 
+    verify_pet_access(
+        vaccination.pet_id,
+        current_user["token"]
+    )
+
     for field, value in data.model_dump(
         exclude_unset=True
     ).items():
@@ -142,6 +161,11 @@ def delete_vaccination(
             status_code=403,
             detail="You cannot delete this vaccination"
         )
+
+    verify_pet_access(
+        vaccination.pet_id,
+        current_user["token"]
+    )
 
     db.delete(vaccination)
     db.commit()

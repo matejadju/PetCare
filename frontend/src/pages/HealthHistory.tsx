@@ -9,9 +9,34 @@ import {
 import { healthApi } from '../api/health.api';
 import { getApiError } from '../utils/apiError';
 import type { HealthHistory as HealthHistoryData } from '../types/health';
+import PetSelector from '../components/PetSelector';
+import { usePetSelection } from '../hooks/usePetSelection';
 import '../styles/health.css';
 
 export default function HealthHistory() {
+    const selection = usePetSelection();
+
+    return (
+        <div className="health-page">
+            <PetSelector {...selection} />
+            {!selection.loading && selection.selectedPet &&
+                (!selection.requestedPetId || selection.requestedPetId === selection.petId) && (
+                <HealthHistoryRecords
+                    key={selection.petId}
+                    petId={selection.petId}
+                    petName={selection.selectedPet.name}
+                />
+            )}
+        </div>
+    );
+}
+
+interface HealthHistoryRecordsProps {
+    petId: string;
+    petName: string;
+}
+
+function HealthHistoryRecords({ petId, petName }: HealthHistoryRecordsProps) {
     const [history, setHistory] =
         useState<HealthHistoryData | null>(null);
 
@@ -22,23 +47,28 @@ export default function HealthHistory() {
         'ALL' | 'VACCINATIONS' | 'MEDICATIONS'
     >('ALL');
 
-    const petId = 'pet-001';
 
     useEffect(() => {
-        const loadHistory = async () => {
+        let active = true;
+
+        const loadRecords = async () => {
             try {
                 const data = await healthApi.getHealthHistory(petId);
-                setHistory(data);
+                if (active) setHistory(data);
             } catch (error) {
-                setError(
-                    getApiError(error, 'Failed to load health history.')
-                );
+                if (active) {
+                    setError(getApiError(error, 'Failed to load health history.'));
+                }
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
 
-        void loadHistory();
+        void loadRecords();
+
+        return () => {
+            active = false;
+        };
     }, [petId]);
 
     const formatDate = (date: string | null) => {
@@ -128,7 +158,7 @@ export default function HealthHistory() {
             <section className="health-records">
                 <div className="health-section-heading">
                     <h2>Medical timeline</h2>
-                    <p>Pet ID: {petId}</p>
+                    <p>Pet: {petName}</p>
                 </div>
 
                 <div className="history-filters">

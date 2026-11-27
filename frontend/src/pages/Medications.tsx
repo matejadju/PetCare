@@ -12,9 +12,34 @@ import { healthApi } from '../api/health.api';
 import { getApiError } from '../utils/apiError';
 import type { Medication } from '../types/health';
 import MedicationForm from '../components/MedicationForm';
+import PetSelector from '../components/PetSelector';
+import { usePetSelection } from '../hooks/usePetSelection';
 import '../styles/health.css';
 
 export default function Medications() {
+    const selection = usePetSelection();
+
+    return (
+        <div className="health-page">
+            <PetSelector {...selection} />
+            {!selection.loading && selection.selectedPet &&
+                (!selection.requestedPetId || selection.requestedPetId === selection.petId) && (
+                <MedicationRecords
+                    key={selection.petId}
+                    petId={selection.petId}
+                    petName={selection.selectedPet.name}
+                />
+            )}
+        </div>
+    );
+}
+
+interface MedicationRecordsProps {
+    petId: string;
+    petName: string;
+}
+
+function MedicationRecords({ petId, petName }: MedicationRecordsProps) {
     const { user } = useAuth();
 
     const [medications, setMedications] = useState<Medication[]>([]);
@@ -29,24 +54,29 @@ export default function Medications() {
 
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const petId = 'pet-001';
     const isVeterinarian = user?.role === 'VETERINARIAN';
 
     useEffect(() => {
-        const loadMedications = async () => {
+        let active = true;
+
+        const loadRecords = async () => {
             try {
                 const data = await healthApi.getMedications(petId);
-                setMedications(data);
+                if (active) setMedications(data);
             } catch (error) {
-                setError(
-                    getApiError(error, 'Failed to load medications.')
-                );
+                if (active) {
+                    setError(getApiError(error, 'Failed to load medications.'));
+                }
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
 
-        void loadMedications();
+        void loadRecords();
+
+        return () => {
+            active = false;
+        };
     }, [petId]);
 
     const formatDate = (date: string | null) => {
@@ -197,7 +227,7 @@ export default function Medications() {
             <section className="health-records">
                 <div className="health-section-heading">
                     <h2>Medication records</h2>
-                    <p>Pet ID: {petId}</p>
+                    <p>Pet: {petName}</p>
                 </div>
 
                 {loading && (

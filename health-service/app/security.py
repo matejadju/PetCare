@@ -40,10 +40,11 @@ def get_current_user(
             raise jwt.InvalidTokenError("Missing user information")
 
         return {
-            "id": user_id,
-            "name": payload.get("name"),
-            "role": role
-        }
+    "id": user_id,
+    "name": payload.get("name"),
+    "role": role,
+    "token": credentials.credentials
+}
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(

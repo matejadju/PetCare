@@ -9,6 +9,8 @@ import Profile from "./pages/Profile";
 import Vaccinations from './pages/Vaccinations';
 import Medications from './pages/Medications';
 import HealthHistory from './pages/HealthHistory';
+import Pets from './pages/Pets';
+import PetDetails from './pages/PetDetails';
 
 export default function App() {
   return (
@@ -22,7 +24,9 @@ export default function App() {
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
 
-          <Route path="/pets" element={<PlaceholderPage title="My Pets" />} />
+          <Route path="/pets" element={<Pets />} />
+
+          <Route path="/pets/:petId" element={<PetDetails />} />
 
           <Route path="/vaccinations" element={<Vaccinations />} />
 

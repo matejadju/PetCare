@@ -12,9 +12,38 @@ import { healthApi } from '../api/health.api';
 import { getApiError } from '../utils/apiError';
 import type { Vaccination } from '../types/health';
 import VaccinationForm from '../components/VaccinationForm';
+import PetSelector from '../components/PetSelector';
+import { usePetSelection } from '../hooks/usePetSelection';
 import '../styles/health.css';
 
 export default function Vaccinations() {
+    const selection = usePetSelection();
+
+    return (
+        <div className="health-page">
+            <PetSelector {...selection} />
+
+            {!selection.loading && selection.selectedPet &&
+                (!selection.requestedPetId || selection.requestedPetId === selection.petId) && (
+                <VaccinationRecords
+                    key={selection.petId}
+                    petId={selection.petId}
+                    petName={selection.selectedPet.name}
+                />
+            )}
+        </div>
+    );
+}
+
+interface VaccinationRecordsProps {
+    petId: string;
+    petName: string;
+}
+
+function VaccinationRecords({
+    petId,
+    petName,
+}: VaccinationRecordsProps) {
     const { user } = useAuth();
 
     const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
@@ -29,24 +58,29 @@ export default function Vaccinations() {
 
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const petId = 'pet-001';
     const isVeterinarian = user?.role === 'VETERINARIAN';
 
     useEffect(() => {
-        const loadVaccinations = async () => {
+        let active = true;
+
+        const loadRecords = async () => {
             try {
                 const data = await healthApi.getVaccinations(petId);
-                setVaccinations(data);
+                if (active) setVaccinations(data);
             } catch (error) {
-                setError(
-                    getApiError(error, 'Failed to load vaccinations.')
-                );
+                if (active) {
+                    setError(getApiError(error, 'Failed to load vaccinations.'));
+                }
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
 
-        void loadVaccinations();
+        void loadRecords();
+
+        return () => {
+            active = false;
+        };
     }, [petId]);
 
     const formatDate = (date: string | null) => {
@@ -196,7 +230,7 @@ export default function Vaccinations() {
             <section className="health-records">
                 <div className="health-section-heading">
                     <h2>Vaccination records</h2>
-                    <p>Pet ID: {petId}</p>
+                    <p>Pet: {petName}</p>
                 </div>
 
                 {loading && (

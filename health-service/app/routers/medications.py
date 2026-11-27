@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Medication
 from app.security import require_roles
+from app.pet_client import verify_pet_access
 from app.schemas import (
     MedicationCreate,
     MedicationUpdate,
@@ -25,9 +26,14 @@ def get_pet_medications(
         require_roles("OWNER", "VETERINARIAN")
     )
 ):
+    pet = verify_pet_access(
+        pet_id,
+        current_user["token"]
+    )
+
     query = (
         select(Medication)
-        .where(Medication.pet_id == pet_id)
+        .where(Medication.pet_id == pet["id"])
         .order_by(Medication.start_date.desc())
     )
 
@@ -53,6 +59,11 @@ def get_medication(
             detail="Medication not found"
         )
 
+    verify_pet_access(
+        medication.pet_id,
+        current_user["token"]
+    )
+
     return medication
 
 
@@ -68,7 +79,13 @@ def create_medication(
         require_roles("VETERINARIAN")
     )
 ):
+    pet = verify_pet_access(
+        data.pet_id,
+        current_user["token"]
+    )
+
     medication_data = data.model_dump()
+    medication_data["pet_id"] = pet["id"]
     medication_data["veterinarian_id"] = current_user["id"]
 
     medication = Medication(**medication_data)
@@ -106,6 +123,11 @@ def update_medication(
             detail="You cannot modify this medication"
         )
 
+    verify_pet_access(
+        medication.pet_id,
+        current_user["token"]
+    )
+
     for field, value in data.model_dump(
         exclude_unset=True
     ).items():
@@ -142,6 +164,11 @@ def delete_medication(
             status_code=403,
             detail="You cannot delete this medication"
         )
+
+    verify_pet_access(
+        medication.pet_id,
+        current_user["token"]
+    )
 
     db.delete(medication)
     db.commit()
