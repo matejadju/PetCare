@@ -1,7 +1,4 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { PawPrint, Search } from 'lucide-react';
-
+import { PawPrint } from 'lucide-react';
 import type { Pet } from '../types/pet';
 
 interface PetSelectorProps {
@@ -19,7 +16,6 @@ interface PetSelectorProps {
 export default function PetSelector({
     pets,
     selectedPet,
-    requestedPetId,
     loading,
     error,
     isOwner,
@@ -27,18 +23,6 @@ export default function PetSelector({
     selectPet,
     disabled = false,
 }: PetSelectorProps) {
-    const [searchId, setSearchId] = useState(requestedPetId);
-
-    const handleSearch = (
-        event: FormEvent<HTMLFormElement>
-    ) => {
-        event.preventDefault();
-
-        if (searchId.trim()) {
-            selectPet(searchId.trim());
-        }
-    };
-
     return (
         <section className="pet-selector">
             <div className="pet-selector-heading">
@@ -47,24 +31,32 @@ export default function PetSelector({
                 </div>
 
                 <div>
-                    <h2>Select pet</h2>
+                    <h2>
+                        {isVeterinarian
+                            ? 'Select patient'
+                            : 'Select pet'}
+                    </h2>
 
                     <p>
-                        Choose a pet to view its health records.
+                        {isVeterinarian
+                            ? 'Choose a patient from your appointments to manage health records.'
+                            : 'Choose a pet to view its health records.'}
                     </p>
                 </div>
             </div>
 
-            {isOwner && (
+            {(isOwner || isVeterinarian) && (
                 <div className="edit-form-group">
                     <label htmlFor="selected-pet">
-                        Your pets
+                        {isVeterinarian
+                            ? 'Your patients'
+                            : 'Your pets'}
                     </label>
 
                     <select
                         id="selected-pet"
                         value={selectedPet?.id || ''}
-                        onChange={(event) =>
+                        onChange={event =>
                             selectPet(event.target.value)
                         }
                         disabled={
@@ -74,75 +66,47 @@ export default function PetSelector({
                         }
                     >
                         <option value="" disabled>
-                            Select a pet
+                            {isVeterinarian
+                                ? 'Select a patient'
+                                : 'Select a pet'}
                         </option>
 
-                        {pets.map((pet) => (
+                        {pets.map(pet => (
                             <option
                                 key={pet.id}
                                 value={pet.id}
                             >
-                                {pet.name} – {pet.species}
+                                {pet.name} - {pet.species}
+                                {pet.breed
+                                    ? ` (${pet.breed})`
+                                    : ''}
                             </option>
                         ))}
                     </select>
                 </div>
             )}
 
-            {isVeterinarian && (
-                <form
-                    className="pet-selector-search"
-                    onSubmit={handleSearch}
-                >
-                    <div className="edit-form-group">
-                        <label htmlFor="patient-id">
-                            Patient ID
-                        </label>
-
-                        <input
-                            id="patient-id"
-                            type="text"
-                            value={searchId}
-                            onChange={(event) =>
-                                setSearchId(event.target.value)
-                            }
-                            placeholder="Enter pet UUID"
-                            disabled={loading || disabled}
-                            required
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="primary-button"
-                        disabled={
-                            loading ||
-                            disabled ||
-                            !searchId.trim()
-                        }
-                    >
-                        <Search size={18} />
-                        Find pet
-                    </button>
-                </form>
-            )}
-
             {loading && (
                 <p className="pet-selector-message">
-                    Loading pet information...
+                    {isVeterinarian
+                        ? 'Loading patients...'
+                        : 'Loading pet information...'}
                 </p>
             )}
 
             {error && (
-                <div className="auth-error">{error}</div>
+                <div className="auth-error">
+                    {error}
+                </div>
             )}
 
             {!loading &&
                 !error &&
-                isOwner &&
                 pets.length === 0 && (
                     <p className="pet-selector-message">
-                        You have no pets yet. Add a pet in My Pets.
+                        {isVeterinarian
+                            ? 'You have no patients from appointments yet.'
+                            : 'You have no pets yet. Add a pet in My Pets.'}
                     </p>
                 )}
 
@@ -160,11 +124,13 @@ export default function PetSelector({
                     </div>
 
                     <div>
-                        <strong>{selectedPet.name}</strong>
+                        <strong>
+                            {selectedPet.name}
+                        </strong>
 
                         <p>
                             {selectedPet.species}
-                            {' · '}
+                            {' / '}
                             {selectedPet.breed || 'Unknown breed'}
                         </p>
                     </div>

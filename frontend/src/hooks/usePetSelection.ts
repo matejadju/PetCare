@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useAuth } from './useAuth';
 import { petApi } from '../api/pet.api';
+import { appointmentApi } from '../api/appointment.api';
 import { getApiError } from '../utils/apiError';
 import type { Pet } from '../types/pet';
 
@@ -31,38 +32,85 @@ export function usePetSelection() {
             setPets([]);
 
             try {
+                let data: Pet[] = [];
+
                 if (isOwner) {
-                    const data = await petApi.getPets();
+                    data = await petApi.getPets();
+                } else if (isVeterinarian) {
+                    const appointments =
+                        await appointmentApi.getAppointments();
 
-                    if (!active) return;
+                    const patientIds = [
+                        ...new Set(
+                            appointments
+                                .filter(
+                                    appointment =>
+                                        appointment.status !== 'cancelled'
+                                )
+                                .map(
+                                    appointment => appointment.petId
+                                )
+                        ),
+                    ];
 
-                    setPets(data);
+                    const results = await Promise.allSettled(
+                        patientIds.map(
+                            petId => petApi.getPet(petId)
+                        )
+                    );
 
-                    if (requestedPetId) {
-                        const pet = data.find(
-                            (item) => item.id === requestedPetId
+                    data = results
+                        .filter(
+                            (
+                                result
+                            ): result is PromiseFulfilledResult<Pet> =>
+                                result.status === 'fulfilled'
+                        )
+                        .map(result => result.value);
+
+                    data.sort((a, b) =>
+                        a.name.localeCompare(b.name)
+                    );
+
+                    if (
+                        active &&
+                        results.some(
+                            result => result.status === 'rejected'
+                        )
+                    ) {
+                        setError(
+                            'Some patient information could not be loaded.'
                         );
-
-                        if (!pet) {
-                            setError('Pet not found or access denied.');
-                            return;
-                        }
-
-                        setSelectedPet(pet);
-                    } else {
-                        setSelectedPet(data[0] || null);
                     }
-                } else if (isVeterinarian && requestedPetId) {
-                    const pet = await petApi.getPet(requestedPetId);
+                }
 
-                    if (!active) return;
+                if (!active) return;
+
+                setPets(data);
+
+                if (requestedPetId) {
+                    const pet = data.find(
+                        item => item.id === requestedPetId
+                    );
+
+                    if (!pet) {
+                        setError(
+                            'Pet not found in your available patient list.'
+                        );
+                        return;
+                    }
 
                     setSelectedPet(pet);
+                } else {
+                    setSelectedPet(data[0] || null);
                 }
             } catch (error) {
                 if (active) {
                     setError(
-                        getApiError(error, 'Failed to load pet information.')
+                        getApiError(
+                            error,
+                            'Failed to load pet information.'
+                        )
                     );
                 }
             } finally {
